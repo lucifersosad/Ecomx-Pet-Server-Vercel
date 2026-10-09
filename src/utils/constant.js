@@ -16,6 +16,7 @@ const PAYMENT_METHOD = {
     OFFLINE: 'off',
 }
 const SHIPPING_FEE = 30000
+const MIN_PRODUCT_PRICE = 25000
 const STATUS_SHIPPING = {
     PACKAGED: 'packaged',
     DELIVERY: 'delivery',
@@ -86,4 +87,5 @@ module.exports = {
     STATUS_SHIPPING,
     PAYMENT_METHOD,
     SHIPPING_FEE,
+    MIN_PRODUCT_PRICE,
 }

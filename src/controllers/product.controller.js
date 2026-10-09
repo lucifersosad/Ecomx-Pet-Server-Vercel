@@ -317,6 +317,13 @@ const createProduct = async (req, res) => {
             '🚀 ~ file: product.controller.js:28 ~ createProduct ~ error:',
             error
         )
+        if (error.name === 'ValidationError') {
+            return res.status(HTTP_STATUS.BAD_REQUEST).json({
+                success: false,
+                status: HTTP_STATUS.BAD_REQUEST,
+                message: error.message,
+            })
+        }
         return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
             success: false,
             status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
@@ -382,7 +389,7 @@ const updateProduct = async (req, res) => {
                     isActive: isActive,
                 },
             },
-            { new: true }
+            { new: true, runValidators: true }
         )
             .populate('category')
             .populate('attribute_product')
@@ -405,6 +412,13 @@ const updateProduct = async (req, res) => {
             '🚀 ~ file: Product.controller.js:120 ~ updateProduct ~ error:',
             error
         )
+        if (error.name === 'ValidationError') {
+            return res.status(HTTP_STATUS.BAD_REQUEST).json({
+                success: false,
+                status: HTTP_STATUS.BAD_REQUEST,
+                message: error.message,
+            })
+        }
         return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
             success: false,
             status: HTTP_STATUS.INTERNAL_SERVER_ERROR,

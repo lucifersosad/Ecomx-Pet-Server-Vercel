@@ -1,4 +1,5 @@
 const mongoose = require('mongoose')
+const { MIN_PRODUCT_PRICE } = require('../utils/constant')
 
 const productSchema = new mongoose.Schema({
     code: {
@@ -35,7 +36,7 @@ const productSchema = new mongoose.Schema({
     price: {
         type: Number,
         required: true,
-        min: 0,
+        min: [MIN_PRODUCT_PRICE, 'Price must be at least {MIN}'],
     },
     avaiable: {
         type: Number,
