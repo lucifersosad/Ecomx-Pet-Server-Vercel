@@ -3,9 +3,6 @@
     "version": "1.0.0",
     "description": "",
     "main": "index.js",
-    "engines": {
-        "node": "16.x"
-    },
     "scripts": {
         "start": "nodemon src/index.js",
         "test": "jest"
