@@ -2,6 +2,13 @@ const { generateProductCode } = require('../helper/randomCode')
 const Product = require('../models/product.model')
 const { HTTP_STATUS } = require('../utils/constant')
 const _ = require('lodash')
+const {
+    NO_EXPIRE,
+    buildProductCacheKey,
+    getCache,
+    setCache,
+    clearProductCache,
+} = require('../helper/cache.helper')
 
 const getAllProductManagerAdmin = async (req, res) => {
     const { limit, offset } = Object.assign({}, req.query)
@@ -35,6 +42,11 @@ const getAllProductManagerAdmin = async (req, res) => {
 //[GET LIST PRODUCT BY PARAMS ] /get-all-product?params
 const getAllProduct = async (req, res) => {
     const { limit, offset } = Object.assign({}, req.query)
+    const cacheKey = buildProductCacheKey('all', { limit, offset })
+    const cached = await getCache(cacheKey)
+    if (cached) {
+        return res.status(HTTP_STATUS.OK).json(cached)
+    }
     var listProduct = await Product.find({ isActive: true })
         .populate('category')
         .limit(limit)
@@ -50,7 +62,7 @@ const getAllProduct = async (req, res) => {
         })
     }
     const totalPage = await Product.find().count()
-    res.status(HTTP_STATUS.OK).json({
+    const response = {
         success: true,
         status: HTTP_STATUS.OK,
         message: 'Get list product success.',
@@ -60,7 +72,9 @@ const getAllProduct = async (req, res) => {
             page: offset,
             totalPage: `${_.ceil(totalPage / _.toInteger(limit))}`,
         },
-    })
+    }
+    await setCache(cacheKey, response, NO_EXPIRE)
+    res.status(HTTP_STATUS.OK).json(response)
 }
 //[GET PRODUCT BY CATEGORY]
 const getProductByCategory = async (req, res) => {
@@ -184,6 +198,12 @@ const filterProduct = async (req, res) => {
     }
 
     try {
+        const cacheKey = buildProductCacheKey('filter', req.query)
+        const cached = await getCache(cacheKey)
+        if (cached) {
+            return res.status(HTTP_STATUS.OK).json(cached)
+        }
+
         const products = await Product.find(query)
             .populate('category')
             .limit(limit)
@@ -194,7 +214,7 @@ const filterProduct = async (req, res) => {
 
         const totalPage = await Product.find(query).count()
 
-        res.status(HTTP_STATUS.OK).json({
+        const response = {
             success: true,
             status: HTTP_STATUS.OK,
             products,
@@ -203,7 +223,12 @@ const filterProduct = async (req, res) => {
                 page: offset,
                 totalPage: `${_.ceil(totalPage / _.toInteger(limit))}`,
             },
-        })
+        }
+        // Home tabs (search by tags) are a fixed set, so keep them permanently;
+        // shop filters have endless combinations and keep the default TTL
+        const ttl = searchType === 'tags' ? NO_EXPIRE : undefined
+        await setCache(cacheKey, response, ttl)
+        res.status(HTTP_STATUS.OK).json(response)
     } catch (error) {
         console.log('🚀 ~ filterProduct ~ error:', error)
         return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
@@ -306,6 +331,7 @@ const createProduct = async (req, res) => {
             })
         }
 
+        await clearProductCache()
         return res.status(HTTP_STATUS.CREATED).json({
             success: true,
             status: HTTP_STATUS.CREATED,
@@ -401,6 +427,7 @@ const updateProduct = async (req, res) => {
                 message: 'Update Product failed.',
             })
         }
+        await clearProductCache()
         res.status(HTTP_STATUS.CREATED).json({
             success: true,
             status: HTTP_STATUS.CREATED,
@@ -459,6 +486,7 @@ const deleteProduct = async (req, res) => {
                 message: 'Delete Product failed.',
             })
         }
+        await clearProductCache()
         return res.status(HTTP_STATUS.CREATED).json({
             success: true,
             status: HTTP_STATUS.CREATED,
